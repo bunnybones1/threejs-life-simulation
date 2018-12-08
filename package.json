@@ -1,7 +1,7 @@
 {
-  "name": "threejs-orbitingballs",
-  "version": "1.0.1",
-  "description": "A tiny physics sim of balls orbitting thier center of mass, as a single threejs object.",
+  "name": "threejs-life-simulation",
+  "version": "2.0.1",
+  "description": "A tiny experimental colony of lifeforms, doing their thing.",
   "main": "index.js",
   "license": "MIT",
   "author": {
@@ -11,8 +11,9 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "loadandrunscripts": "^1.0.0",
-    "threejs-managed-view": "^1.0.0"
+    "browserify": "^16.2.3",
+    "threejs-managed-view": "^8.0.0",
+    "urlparam": "^1.0.2"
   },
   "scripts": {
     "test": "beefy test.js --live --open"
@@ -25,10 +26,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/bunnybones1/threejs-orbitingballs.git"
+    "url": "git://github.com/bunnybones1/threejs-life-simulation.git"
   },
-  "homepage": "https://github.com/bunnybones1/threejs-orbitingballs",
+  "homepage": "https://github.com/bunnybones1/threejs-life-simulation",
   "bugs": {
-    "url": "https://github.com/bunnybones1/threejs-orbitingballs/issues"
+    "url": "https://github.com/bunnybones1/threejs-life-simulation/issues"
   }
 }
