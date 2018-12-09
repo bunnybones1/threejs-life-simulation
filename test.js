@@ -26,9 +26,10 @@ view.scene.add(life);
 view.renderManager.onEnterFrame.add(() => life.onEnterFrame());
 view.camera.position.x += 15;
 view.camera.position.z += 5;
-// view.camera.fov *= 0.5;
+view.camera.fov *= 0.5;
 view.camera.updateProjectionMatrix();
-var first = true;
+// var first = true;
+var centerOfView = new THREE.Vector3();
 function onEnterFrame() {
 	//put light and camera focus in the center of gravity
 	light.position.copy(life.centerOfMass);
@@ -36,18 +37,19 @@ function onEnterFrame() {
 	light.position.y += 10;
 	var delta = view.camera.position.clone().sub(life.centerOfMass);
 	var angle = Math.atan2(delta.z, delta.x);
-	// angle += 0.002;
+	angle += 0.002;
 	var distance = Math.sqrt(delta.x*delta.x + delta.z*delta.z);
 	var delta2 = delta.clone();
 	delta2.x = Math.cos(angle) * distance;
 	delta2.z = Math.sin(angle) * distance;
 	view.camera.position.add(delta.sub(delta2));
-	if(first) {
-		view.camera.lookAt(life.centerOfMass);
-		view.camera.rotation.x -= 0.3;
-		view.camera.rotation.y += 0.3;
-		first = false;
-	}
+	// if(first) {
+		centerOfView.lerp(life.centerOfMass, 0.15);
+		view.camera.lookAt(centerOfView);
+		// view.camera.rotation.x -= 0.3;
+		// view.camera.rotation.y += 0.3;
+		// first = false;
+	// }
 }
 view.renderManager.onEnterFrame.add(onEnterFrame);
 
