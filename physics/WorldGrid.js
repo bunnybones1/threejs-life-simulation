@@ -1,16 +1,23 @@
 var THREE = require('three');
 
+var colorEarth = new THREE.Color(0.7, 0.4, 0.2);
+var shininessEarth = 10;
+var colorGrass = new THREE.Color(0.5, 0.9, 0.3);
+var shininessGrass = 100;
+
 function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
     var totalCells = cols * layers * rows;
     var bytes = totalCells * 4;
     var densityFieldBuffer = new ArrayBuffer(bytes);
-    var densityFieldData = new Float32Array(densityFieldBuffer);
+    var densityFieldData = new Int16Array(densityFieldBuffer);
     var velFieldXBuffer = new ArrayBuffer(bytes);
     var velFieldXData = new Float32Array(velFieldXBuffer);
     var velFieldYBuffer = new ArrayBuffer(bytes);
     var velFieldYData = new Float32Array(velFieldYBuffer);
     var velFieldZBuffer = new ArrayBuffer(bytes);
     var velFieldZData = new Float32Array(velFieldZBuffer);
+    var actorSunlight = [];
+    var actorMaterials = [];
     var actorPositions = [];
     var actorVelocities = [];
     var actorElementIds = [];
@@ -38,6 +45,13 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
         var yi = clamp(Math.round(pos.y * unitScaleInv), 0, layers) * yOffset;
         return xi + zi + yi;
     }
+
+    function getCellFromPos(pos) {
+        var xi = clamp(Math.round(pos.x * unitScaleInv), 0, cols);
+        var zi = clamp(Math.round(pos.z * unitScaleInv), 0, rows);
+        var yi = clamp(Math.round(pos.y * unitScaleInv), 0, layers);
+        return xi +" "+ zi +" "+ yi;
+    }
     // var position = new THREE.Vector3();
     // function getIndexFromPos(pos) {
         // var xi = clamp(Math.round(pos.x * unitScaleInv), 0, cols);
@@ -54,12 +68,92 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
 
 
     var normal = new THREE.Vector3();
+    function n(x, y, z) {
+        return new THREE.Vector3(x * unitScale, y * unitScale, z * unitScale).multiplyScalar(0.25);
+    }
+    var indexOffset = [
+        -yOffset,
+        -yOffset+xOffset,
+        -yOffset-xOffset,
+        -yOffset+zOffset,
+        -yOffset-zOffset,
+        xOffset,
+        -xOffset,
+        zOffset,
+        -zOffset,
+        yOffset,
+        yOffset+xOffset,
+        yOffset-xOffset,
+        yOffset+zOffset,
+        yOffset-zOffset
+    ];
+    var offsetNormals = [
+        n(0, -1, 0),
+        n(1, -1, 0),
+        n(-1, -1, 0),
+        n(0, -1, 1),
+        n(0, -1, -1),
+        n(1, 0, 0),
+        n(-1, 0, 0),
+        n(0, 0, 1),
+        n(0, 0, -1),
+        n(0, 1, 0),
+        n(1, 1, 0),
+        n(-1, 1, 0),
+        n(0, 1, 1),
+        n(0, 1, -1)
+    ];
+    var indexOffsetDownhill = [
+         xOffset -yOffset,
+        -xOffset -yOffset,
+                 -yOffset +zOffset,
+                 -yOffset -zOffset,
+        +xOffset -yOffset +zOffset,
+        -xOffset -yOffset -zOffset,
+        -xOffset -yOffset +zOffset,
+        +xOffset -yOffset -zOffset
+    ];
+    var offsetNormalsDownhill = [
+        n(1, -1, 0),
+        n(-1, -1, 0),
+        n(0, -1, 1),
+        n(0, -1, -1),
+        n(1, -1, 1),
+        n(-1, -1, -1),
+        n(-1, -1, 1),
+        n(1, -1, -1),
+    ];
+    function downhill(index) {
+        for(var i = 0; i < totalOffsets; i++) {
+            if(densityFieldData[index + indexOffsetDownhill[i]] == 0) {
+                normal.copy(offsetNormalsDownhill[i]);
+                return true;
+            }
+        }
+        return false;
+    }
+    var offsetNormalsUpish = offsetNormals.slice(offsetNormals.length - 5, offsetNormals.length);
+    var totalOffsets = indexOffset.length;
+    function calculateLessDenseNormalNearIndex(index, density) {
+        for(var i = 0; i < totalOffsets; i++) {
+            if(densityFieldData[index + indexOffset[i]] < density) {
+                normal.copy(offsetNormals[i]);
+                return true;
+            }
+        }
+        return false;
+    }
 	var randPos = () => Math.random() - 0.5;
-    function wiggle() {
-        normal.x = randPos();
-        normal.y = randPos();
-        normal.z = randPos();
-        normal.normalize().multiplyScalar(unitScale * 0.15);
+    function wiggle(index, density) {
+        var nearby = calculateLessDenseNormalNearIndex(index, density);
+        if(!nearby) {
+            normal.copy(offsetNormalsUpish[~~(offsetNormalsUpish.length * Math.random())]);
+            // normal.x = randPos();
+            // normal.y = randPos();
+            // normal.z = randPos();
+            // normal.normalize().multiplyScalar(unitScale);
+        }
+        // normal.multiplyScalar(0.25);
         return normal;
     }
     function getDensityNormal(pos) {
@@ -78,11 +172,13 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
             var pos = actorPositions[i];
             var index = actorElementIds[i];
             densityFieldData[index]--;
-            pos.add(getDensityNormal(pos));
-            pos.x = (pos.x + rangeX) % rangeX;
-            pos.y = clamp(pos.y, 0, rangeY);
-            pos.z = (pos.z + rangeZ) % rangeZ;
-            index = getIndexFromPos(pos);
+            if(densityFieldData[index] > 0) {
+                pos.add(getDensityNormal(pos));
+                pos.x = (pos.x + rangeX) % rangeX;
+                pos.y = clamp(pos.y, 0, rangeY);
+                pos.z = (pos.z + rangeZ) % rangeZ;
+                index = getIndexFromPos(pos);
+            }
             densityFieldData[index]++;
             actorElementIds[i] = index;
         }
@@ -90,8 +186,10 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
         //exchange velocity information with the velocity field
         for(var i = totalActors-1; i >= 0; i--) {
             var index = actorElementIds[i];
+            densityFieldData[index]--;
             var oldIndex = index;
             var pos = actorPositions[i];
+            // console.log(i + ": " + getCellFromPos(pos));
             var vel = actorVelocities[i];
             var thickness = 4 / (4 + densityFieldData[index]);
             var invThickness = 1 - thickness;
@@ -109,10 +207,12 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
             velFieldYData[index] *= 0.8;
             velFieldZData[index] *= 0.8;
 
-            densityFieldData[index]--;
             var yNormal = GetDensitySafe(index-yOffset);
             if(yNormal == 0 && pos.y > 0.01) {
                 vel.y += gravity;
+                vel.x *= 0.98;
+                vel.z *= 0.98;
+                getCellFromPos(pos);
             } else {
                 vel.y = 0;
                 if(pos.y <= 0.1) {
@@ -121,7 +221,13 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
                 }
             }
             pos.add(vel);
-            pos.y = clamp(pos.y, 0, rangeY);
+            if(pos.y < 0) {
+                pos.y = 0;
+                vel.y = 0;
+            } else if(pos.y > rangeY) {
+                pos.y = rangeY;
+                vel.y = 0;
+            }
             index = getIndexFromPos(pos);
             actorElementIds[i] = index;
             densityFieldData[index]++;
@@ -137,26 +243,59 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
         //wiggle actors stuck in highly dense areas with no obvious gradient
         //otherwise just snap them to their closest cell
         for(var i = totalActors-1; i >= 0; i--) {
+            if(actorMaterials[i].emissive.r > 0) {
+                actorMaterials[i].emissive.r -= 0.01;
+                actorMaterials[i].emissive.g -= 0.005;
+            }
             var index = actorElementIds[i];
             densityFieldData[index]--;
             var density = densityFieldData[index];
             var pos = actorPositions[i];
             if(density >= 1) {
-                pos.add(wiggle());
+                pos.add(wiggle(index, density));
+                // actorMaterials[i].color.set(0xffff00);
             } else {
-                pos.x -= (pos.x - Math.round(pos.x / unitScale) * unitScale) * 0.25;
-                pos.y -= (pos.y - Math.round(pos.y / unitScale) * unitScale) * 0.25;
-                pos.z -= (pos.z - Math.round(pos.z / unitScale) * unitScale) * 0.25;
+                // if(downhill(index)) {
+                //     pos.add(normal);
+                // } else {
+                    pos.x -= (pos.x - Math.round(pos.x / unitScale) * unitScale) * 0.25;
+                    pos.y -= (pos.y - Math.round(pos.y / unitScale) * unitScale) * 0.25;
+                    pos.z -= (pos.z - Math.round(pos.z / unitScale) * unitScale) * 0.25;
+                    // actorMaterials[i].color.set(0xffffff);
+                // }
             }
             index = getIndexFromPos(pos);
             actorElementIds[i] = index;
             densityFieldData[index]++;
         }
+        //sunlight and materials
+        for(var i = totalActors-1; i >= 0; i--) {
+            var index = actorElementIds[i];
+            var density = densityFieldData[index + yOffset];
+            var changed = false;
+            var sunlight = actorSunlight[i];
+            if(density == 0 && sunlight < 1) {
+                sunlight += 0.001;
+                changed = true;
+            } else if(density > 0 && sunlight > 0) {
+                sunlight -= 0.01;
+                changed = true;
+            }
+            if(changed) {
+                actorSunlight[i] = sunlight;
+                actorMaterials[i].color.copy(colorEarth).lerp(colorGrass, sunlight);
+                actorMaterials[i].shininess = shininessEarth * (1-sunlight) + shininessGrass * sunlight;
+            }
+        }
     }
 
-    this.addActorPosition = function addActorPosition(pos, vel) {
+    this.addActorPosition = function addActorPosition(pos, vel, mat) {
         actorPositions.push(pos);
         actorVelocities.push(vel);
+        actorMaterials.push(mat);
+        mat.color.copy(colorEarth);
+        mat.shininess = shininessEarth;
+        actorSunlight.push(0);
         actorElementIds.push(getIndexFromPos(pos));
         densityFieldData[getIndexFromPos(pos)]++;
     }
@@ -167,7 +306,43 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
             actorPositions.splice(index, 1);
             actorVelocities.splice(index, 1);
             actorElementIds.splice(index, 1);
+            actorMaterials.splice(index, 1);
+            actorSunlight.splice(index, 1);
         }        
+    }
+
+    var position = new THREE.Vector3();
+    this.boom = function boom(pos, radius) {
+        var startIndex;
+        do {
+            startIndex = getIndexFromPos(pos);
+            pos.y += unitScale;
+        } while (densityFieldData[startIndex] > 0)
+
+        var radiusSquared = radius * radius;
+        for(var ix = pos.x - radius; ix < pos.x + radius; ix += unitScale) {
+            for(var iy = pos.y - radius; iy < pos.y + radius; iy += unitScale) {
+                for(var iz = pos.z - radius; iz < pos.z + radius; iz += unitScale) {
+                    position.set(ix, iy, iz);
+                    var index = getIndexFromPos(position);
+                    position.sub(pos);
+                    if(position.lengthSq() < radiusSquared) {
+                        position.normalize().multiplyScalar(0.0525);
+                        position.y += 0.15;
+                        // velFieldXData[index] += position.x;
+                        // velFieldYData[index] += position.y;
+                        // velFieldZData[index] += position.z;
+                        var actorIndex = actorElementIds.indexOf(index);
+                        if(actorIndex != -1) {
+                            actorVelocities[actorIndex].add(position);
+                            actorMaterials[actorIndex].emissive.r += 0.5;
+                            actorMaterials[actorIndex].emissive.g += 0.25;
+                            actorSunlight[actorIndex] = -0.25;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

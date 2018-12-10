@@ -13,14 +13,18 @@ view.scene.add(light);
 var hemisphereLight = new THREE.HemisphereLight(0x4f7f8f, 0x4f2f00);
 view.scene.add(hemisphereLight);
 var mat = new THREE.MeshPhongMaterial({
-	// color: 0xffffff
-	shininess: 100,
-	color: 0xff4422
+	color: 0xffffff,
+	emissive: 0x000000,
+	// color: 0xff4422,
+	shininess: 100
 });
 
 view.renderer.setClearColor(0xdfefef);
 
-var life = new LifeSimulation(5000, mat);
+var life = new LifeSimulation(2000, mat);
+// for(var y = 0; y < 2; y += 0.125) {
+// 	life.makeAnimal(new THREE.Vector3(20, y, 20), new THREE.Vector3());
+// }
 view.scene.add(life);
 
 view.renderManager.onEnterFrame.add(() => life.onEnterFrame());

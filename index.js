@@ -2,36 +2,41 @@ var THREE = require('three');
 var Animal = require('./GameObjects/Animal');
 var WorldGrid = require('./physics/WorldGrid');
 
+var birthBoxSize = 1;
+var birthBoxSizeHalf = birthBoxSize * .5;
+var randPos = () => Math.random() * birthBoxSize - birthBoxSizeHalf;
+
 function LifeSimulation(maxAnimals, material) {
 	THREE.Object3D.call(this);
 	material = material ? material : new THREE.MeshBasicMaterial();
 
 	//all units are in metres
-	this.maxAnimals = maxAnimals ? maxAnimals : 100;
+	this.maxAnimals = maxAnimals !== undefined ? maxAnimals : 100;
 	this.animals = [];
 
-	var birthBoxSize = 1;
-	var birthBoxSizeHalf = birthBoxSize * .5;
-	var randPos = () => Math.random() * birthBoxSize - birthBoxSizeHalf;
 
 	//for center of gravity
 	this.totalMass = 0;
 	this.centerOfMass = new THREE.Vector3();
 	
 	var radius = 0.15;
-	this.worldGrid = new WorldGrid(512, 512, 128, radius * 0.66);
+	this.worldGrid = new WorldGrid(512, 512, 128, radius * 2 * 0.66);
 
 
-	function makeAnimal() {
-		var animal = new Animal(radius, material);
-		animal.position.set(randPos()+25, randPos(), randPos()+20);
+	function makeAnimal(pos, vel) {
+		var animal = new Animal(radius, material.clone());
+		if(pos) {
+			animal.position.copy(pos);
+		} else {
+			animal.position.set(randPos()+25, randPos(), randPos()+20);
+		}
 		this.totalMass += animal.mass;
 		this.animals.push(animal);
 		this.add(animal);
-		var vel = new THREE.Vector3(randPos()*4, randPos() + birthBoxSize * 6, randPos()+7);
-		vel.normalize();
-		vel.multiplyScalar(0.4);
-		this.worldGrid.addActorPosition(animal.position, vel);
+		var velocity = vel || new THREE.Vector3(randPos()*4, randPos() + birthBoxSize * 6, randPos()+5);
+		velocity.normalize();
+		velocity.multiplyScalar(0.3);
+		this.worldGrid.addActorPosition(animal.position, velocity, animal.material);
 	}
 	this.timer = 0;
 	this.makeAnimal = makeAnimal;
@@ -44,6 +49,7 @@ function LifeSimulation(maxAnimals, material) {
 
 LifeSimulation.prototype = Object.create(THREE.Object3D.prototype);
 
+var boomed = false;
 //on every frame
 LifeSimulation.prototype.onEnterFrame = function () {
 	this.timer += 0.2;
@@ -77,6 +83,10 @@ LifeSimulation.prototype.onEnterFrame = function () {
 	// 	animal.scale.x = animal.scale.y = 1/Math.sqrt(animal.scale.z);
 	// 	animal.lookAt(animal.position.clone().add(animal.velocity))
 	// };
+	if(this.timer >= 10) {
+		this.timer = 9;
+		this.worldGrid.boom(new THREE.Vector3(randPos()*6+25, randPos()+0.5, randPos()*8+24), 1);
+	}
 }
 
 module.exports = LifeSimulation;
