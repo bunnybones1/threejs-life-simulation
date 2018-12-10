@@ -21,7 +21,7 @@ var mat = new THREE.MeshPhongMaterial({
 
 view.renderer.setClearColor(0xdfefef);
 
-var life = new LifeSimulation(2000, mat);
+var life = new LifeSimulation(20000, mat);
 // for(var y = 0; y < 2; y += 0.125) {
 // 	life.makeAnimal(new THREE.Vector3(20, y, 20), new THREE.Vector3());
 // }
@@ -30,7 +30,7 @@ view.scene.add(life);
 view.renderManager.onEnterFrame.add(() => life.onEnterFrame());
 view.camera.position.x += 15;
 view.camera.position.z += 5;
-view.camera.fov *= 0.5;
+view.camera.fov *= 0.75;
 view.camera.updateProjectionMatrix();
 // var first = true;
 var centerOfView = new THREE.Vector3();

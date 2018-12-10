@@ -165,7 +165,17 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
         return normal;
     }
 
+    var lastTime = Date.now();
+    var timeStep = 1000/60;
+
     this.onEnterFrame = function onEnterFrame() {
+        var now = Date.now();
+        while(now > lastTime + timeStep) {
+            lastTime += timeStep;
+            tickPhysics();
+        }
+    }
+    function tickPhysics() {
         var totalActors = actorElementIds.length;
         //move out of highly dense areas
         for(var i = totalActors-1; i >= 0; i--) {
