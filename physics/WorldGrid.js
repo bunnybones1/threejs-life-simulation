@@ -40,9 +40,9 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
     }
 
     function getIndexFromPos(pos) {
-        var xi = clamp(Math.round(pos.x * unitScaleInv), 0, cols);
-        var zi = clamp(Math.round(pos.z * unitScaleInv), 0, rows) * zOffset;
-        var yi = clamp(Math.round(pos.y * unitScaleInv), 0, layers) * yOffset;
+        var xi = clamp(Math.round(pos.x * unitScaleInv), 0, cols-1);
+        var zi = clamp(Math.round(pos.z * unitScaleInv), 0, rows-1) * zOffset;
+        var yi = clamp(Math.round(pos.y * unitScaleInv), 0, layers-1) * yOffset;
         return xi + zi + yi;
     }
 
@@ -218,6 +218,7 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
             velFieldZData[index] *= 0.8;
 
             var yNormal = GetDensitySafe(index-yOffset);
+
             if(yNormal == 0 && pos.y > 0.01) {
                 vel.y += gravity;
                 vel.x *= 0.98;
@@ -230,7 +231,11 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
                     vel.z *= 0.9;
                 }
             }
-            pos.add(vel);
+            
+            pos.x = (pos.x + vel.x + rangeX) % rangeX;
+            pos.y = clamp(pos.y + vel.y, 0, rangeY);
+            pos.z = (pos.z + vel.z + rangeZ) % rangeZ;
+
             if(pos.y < 0) {
                 pos.y = 0;
                 vel.y = 0;

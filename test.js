@@ -1,4 +1,5 @@
 var THREE = require('three');
+// require('./utils/threeSafety');
 window.THREE = THREE;
 var ManagedView = require('threejs-managed-view');
 var LifeSimulation = require('./');
@@ -21,7 +22,7 @@ var mat = new THREE.MeshPhongMaterial({
 
 view.renderer.setClearColor(0xdfefef);
 
-var life = new LifeSimulation(20000, mat);
+var life = new LifeSimulation(10000, mat);
 // for(var y = 0; y < 2; y += 0.125) {
 // 	life.makeAnimal(new THREE.Vector3(20, y, 20), new THREE.Vector3());
 // }

@@ -35,7 +35,7 @@ function LifeSimulation(maxAnimals, material) {
 		this.add(animal);
 		var velocity = vel || new THREE.Vector3(randPos()*4, randPos() + birthBoxSize * 6, randPos()+5);
 		velocity.normalize();
-		velocity.multiplyScalar(0.3);
+		velocity.multiplyScalar(0.5);
 		this.worldGrid.addActorPosition(animal.position, velocity, animal.material);
 	}
 	this.timer = 0;
@@ -51,8 +51,10 @@ LifeSimulation.prototype = Object.create(THREE.Object3D.prototype);
 
 var boomed = false;
 //on every frame
+var lastTime = Date.now();
 LifeSimulation.prototype.onEnterFrame = function () {
-	this.timer += 0.2;
+	this.timer += (Date.now() - lastTime) * 0.001;
+	lastTime = Date.now();
 	this.worldGrid.onEnterFrame();
 	if(this.animals.length < this.maxAnimals) {
 		var newAnimals = (Math.sin(this.timer) + 1) * 20;
@@ -84,8 +86,8 @@ LifeSimulation.prototype.onEnterFrame = function () {
 	// 	animal.lookAt(animal.position.clone().add(animal.velocity))
 	// };
 	if(this.timer >= 10) {
-		this.timer = 9;
-		this.worldGrid.boom(new THREE.Vector3(randPos()*6+25, randPos()+0.5, randPos()*8+24), 1);
+		this.timer = 9.8;
+		this.worldGrid.boom(new THREE.Vector3(randPos()*6+25, randPos()+0.5, randPos()*8+24), Math.random() * 0.5 + 0.75);
 	}
 }
 
