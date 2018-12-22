@@ -12,7 +12,7 @@ function LifeSimulation(maxAnimals, material) {
 
 	//all units are in metres
 	this.maxAnimals = maxAnimals !== undefined ? maxAnimals : 100;
-	this.animals = [];
+	var animals = [];
 
 
 	//for center of gravity
@@ -31,8 +31,11 @@ function LifeSimulation(maxAnimals, material) {
 			animal.position.set(randPos()+25, randPos(), randPos()+20);
 		}
 		this.totalMass += animal.mass;
-		this.animals.push(animal);
-		this.add(animal);
+		
+		animals.push(animal);
+		animal.color = animal.material.color;
+		animal.colorGlow = animal.material.emissive;
+		// this.add(animal);
 		var velocity = vel || new THREE.Vector3(randPos()*4, randPos() + birthBoxSize * 6, randPos()+5);
 		velocity.normalize();
 		velocity.multiplyScalar(0.5);
@@ -40,6 +43,68 @@ function LifeSimulation(maxAnimals, material) {
 	}
 	this.timer = 0;
 	this.makeAnimal = makeAnimal;
+	this.animals = animals;
+
+	var particlesMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+		size: 1,
+		sizeAttenuation: true,
+		map: null,
+		// depthWrite: true,
+		alphaTest: 0.5,
+		transparent: true,
+		vertexColors: THREE.VertexColors,
+		vertexColorsGlow: THREE.VertexColors,
+		blending: material.blending
+		// defines: ["USE_COLOR", "USE_COLOR_GLOW"]
+	});
+	Object.defineProperty(this, "texture", {
+		set: function(value) {
+			particlesMaterial.map = value;
+		}
+	})
+    var particlesGeometry = new THREE.BufferGeometry();
+    var positionBuffer = new Float32Array(3 * maxAnimals);
+    var colorBuffer = new Float32Array(3 * maxAnimals);
+    var colorGlowBuffer = new Float32Array(3 * maxAnimals);
+    for(var i = 0 ; i < positionBuffer.length; i++) {
+        positionBuffer[i] = randPos() * 3;
+        colorBuffer[i] = Math.random();
+        colorGlowBuffer[i] = 0;
+    }
+	var positionAttribute = new THREE.BufferAttribute(positionBuffer, 3);
+	particlesGeometry.addAttribute("position", positionAttribute);
+	var colorAttribute = new THREE.BufferAttribute(colorBuffer, 3);
+	particlesGeometry.addAttribute("color", colorAttribute);
+	var colorGlowAttribute = new THREE.BufferAttribute(colorGlowBuffer, 3);
+	particlesGeometry.addAttribute("colorGlow", colorGlowAttribute);
+
+	var particles = new THREE.Points(particlesGeometry, particlesMaterial);
+	particles.setThings = function setThings(index, position, color, colorGlow) {
+		var i3 = index * 3;
+		position.toArray(positionBuffer, i3);
+		color.toArray(colorBuffer, i3);
+		colorGlow.toArray(colorGlowBuffer, i3);
+	}
+	particles.updateAttributes = function updateAttributes() {
+		positionAttribute.needsUpdate = true;
+		colorAttribute.needsUpdate = true;
+		colorGlowAttribute.needsUpdate = true;
+	}
+	// particles.position.set(randPos()+25, randPos(), randPos()+20);
+	this.add(particles);
+	this.particles = particles;
+
+	this.optimizeForCamera = function(camera) {
+		var total = animals.length;
+		for(var i = 0; i < total; i++) {
+			animals[i].sortDistance = camera.position.distanceToSquared(animals[i].position);
+		}
+		animals.sort(function(a, b) {
+			return a.sortDistance - b.sortDistance;
+		});
+	}
+
 	//let make some animals!
 	// for (var i = this.maxAnimals - 1; i >= 0; i--) {
 	// 	//standard threejs animal stuff
@@ -89,6 +154,16 @@ LifeSimulation.prototype.onEnterFrame = function () {
 		this.timer = 9.8;
 		this.worldGrid.boom(new THREE.Vector3(randPos()*6+25, randPos()+0.5, randPos()*8+24), Math.random() * 0.5 + 0.75);
 	}
+
+	var particles = this.particles;
+	var animals = this.animals;
+	var total = this.animals.length;
+	for(var i = 0; i < total; i++) {
+		var animal = animals[i];
+		particles.setThings(i, animal.position, animal.color, animal.colorGlow);
+	}
+	particles.updateAttributes();
+
 }
 
 module.exports = LifeSimulation;

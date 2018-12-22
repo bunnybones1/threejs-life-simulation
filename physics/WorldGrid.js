@@ -170,9 +170,14 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
 
     this.onEnterFrame = function onEnterFrame() {
         var now = Date.now();
-        while(now > lastTime + timeStep) {
+        var ticksAllowed = 4;
+        while(now > lastTime + timeStep && ticksAllowed > 0) {
             lastTime += timeStep;
             tickPhysics();
+            ticksAllowed--;
+        }
+        if(ticksAllowed == 0) {
+            lastTime = now;
         }
     }
     function tickPhysics() {

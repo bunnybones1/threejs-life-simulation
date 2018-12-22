@@ -3,24 +3,30 @@ var THREE = require('three');
 window.THREE = THREE;
 var ManagedView = require('threejs-managed-view');
 var LifeSimulation = require('./');
+var makeBallTexture = require('./makeBallTexture');
 var urlparam = require('urlparam');
 var view = new ManagedView.View({
 	skipFrames: 10
 });
 
+var debugOverdraw = false;
 //lights
 var light = new THREE.PointLight(0xffffff, 0.7);
+light.position.x += 100;
+light.position.y += 100;
 view.scene.add(light);
 var hemisphereLight = new THREE.HemisphereLight(0x4f7f8f, 0x4f2f00);
 view.scene.add(hemisphereLight);
-var mat = new THREE.MeshPhongMaterial({
+var matParams = {
 	color: 0xffffff,
 	emissive: 0x000000,
 	// color: 0xff4422,
-	shininess: 100
-});
+	shininess: 100,
+	blending: debugOverdraw ? THREE.AdditiveBlending : THREE.NormalBlending
+};
+var mat = new THREE.MeshPhongMaterial(matParams);
 
-view.renderer.setClearColor(0xdfefef);
+view.renderer.setClearColor(debugOverdraw ? 0x000000 : 0xdfefef, 1);
 
 var life = new LifeSimulation(10000, mat);
 // for(var y = 0; y < 2; y += 0.125) {
@@ -35,7 +41,23 @@ view.camera.fov *= 0.75;
 view.camera.updateProjectionMatrix();
 // var first = true;
 var centerOfView = new THREE.Vector3();
+var tasks = [];
+tasks.push(makeBallTexture.bind(null, view.renderer, [light, hemisphereLight], function recieveTexture(tex) {
+	life.texture = tex;
+}));
+
+//it costs more to sort for lower overdraw than it saves
+// setInterval(function() {
+// 	life.optimizeForCamera(view.camera);
+// }, 1000);
+
 function onEnterFrame() {
+	if(tasks.length > 0) {
+		for(var i = 0; i < tasks.length; i++) {
+			tasks[i]();
+		}
+		tasks.length = 0;
+	}
 	//put light and camera focus in the center of gravity
 	light.position.copy(life.centerOfMass);
 	light.position.x += 10;
