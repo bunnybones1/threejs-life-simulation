@@ -28,7 +28,8 @@ var mat = new THREE.MeshPhongMaterial(matParams);
 
 view.renderer.setClearColor(debugOverdraw ? 0x000000 : 0xdfefef, 1);
 
-var life = new LifeSimulation(20000, mat);
+var life = new LifeSimulation(10000, mat);
+
 // for(var y = 0; y < 2; y += 0.125) {
 // 	life.makeAnimal(new THREE.Vector3(20, y, 20), new THREE.Vector3());
 // }

@@ -20,7 +20,7 @@ function LifeSimulation(maxAnimals, material) {
 	this.centerOfMass = new THREE.Vector3();
 	
 	var radius = 0.15;
-	this.worldGrid = new WorldGrid(512, 512, 128, radius * 2 * 0.66);
+	var worldGrid = new WorldGrid(128, 128, 64, radius * 2 * 0.66);
 
 
 	function makeAnimal(pos, vel) {
@@ -28,7 +28,7 @@ function LifeSimulation(maxAnimals, material) {
 		if(pos) {
 			animal.position.copy(pos);
 		} else {
-			animal.position.set(randPos()+25, randPos(), randPos()+20);
+			animal.position.set(worldGrid.bounds.getSize().x * 0.5 + randPos(), randPos(), randPos()+4);
 		}
 		this.totalMass += animal.mass;
 		
@@ -39,7 +39,7 @@ function LifeSimulation(maxAnimals, material) {
 		var velocity = vel || new THREE.Vector3(randPos()*4, randPos() + birthBoxSize * 6, randPos()+5);
 		velocity.normalize();
 		velocity.multiplyScalar(0.5);
-		this.worldGrid.addActorPosition(animal.position, velocity, animal.material);
+		worldGrid.addActorPosition(animal.position, velocity, animal.material);
 	}
 	this.timer = 0;
 	this.makeAnimal = makeAnimal;
@@ -105,6 +105,25 @@ function LifeSimulation(maxAnimals, material) {
 		});
 	}
 
+	this.worldGrid = worldGrid;
+	var size = worldGrid.bounds.getSize();
+	var center = worldGrid.bounds.getCenter();
+	var boundsHelper = new THREE.Mesh(
+		new THREE.BoxGeometry(size.x, size.y, size.z, 8, 8, 8),
+		new THREE.MeshBasicMaterial({
+			color: 0xff0000,
+			wireframe: true
+		})
+	);
+	var pg = particles.geometry;
+	pg.boundingBox = worldGrid.bounds;
+	pg.boundingSphere = worldGrid.bounds.getBoundingSphere();
+	pg.computeBoundingBox = null;
+	pg.computeBoundingSphere = null;
+	boundsHelper.position.add(size.clone().multiplyScalar(0.5));
+	this.add(boundsHelper);
+
+
 	//let make some animals!
 	// for (var i = this.maxAnimals - 1; i >= 0; i--) {
 	// 	//standard threejs animal stuff
@@ -152,7 +171,7 @@ LifeSimulation.prototype.onEnterFrame = function () {
 	// };
 	if(this.timer >= 10) {
 		this.timer = 9.8;
-		this.worldGrid.boom(new THREE.Vector3(randPos()*6+25, randPos()+0.5, randPos()*8+24), Math.random() * 0.5 + 0.75);
+		this.worldGrid.boom(new THREE.Vector3(randPos()*6 + this.centerOfMass.x, randPos()+0.5 + this.centerOfMass.y, randPos()*8 + this.centerOfMass.z), Math.random() * 0.5 + 0.75);
 	}
 
 	var particles = this.particles;

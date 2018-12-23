@@ -6,13 +6,14 @@ var colorGrass = new THREE.Color(0.5, 0.9, 0.3);
 var shininessGrass = 100;
 
 function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
-    var boundsMin = new THREE.Vector3(
+    var boundsMax = new THREE.Vector3(
         cols * 0.5 * unitScale,
-        rows * 0.5 * unitScale,
         layers * 0.5 * unitScale,
+        rows * 0.5 * unitScale
     );
-    var boundsMax = boundsMin.clone().multiplyScalar(-1);
+    var boundsMin = boundsMax.clone().multiplyScalar(-1);
     var bounds = new THREE.Box3(boundsMin, boundsMax);
+    this.bounds = bounds;
     var totalCells = cols * layers * rows;
     var bytes = totalCells * 4;
     var densityFieldBuffer = new ArrayBuffer(bytes);
