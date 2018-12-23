@@ -3,7 +3,7 @@ var THREE = require('three');
 window.THREE = THREE;
 var ManagedView = require('threejs-managed-view');
 var LifeSimulation = require('./');
-var makeBallTexture = require('./makeBallTexture');
+var makeCubeletTexture = require('./makeCubeletTexture');
 var urlparam = require('urlparam');
 var view = new ManagedView.View({
 	skipFrames: 10
@@ -28,7 +28,7 @@ var mat = new THREE.MeshPhongMaterial(matParams);
 
 view.renderer.setClearColor(debugOverdraw ? 0x000000 : 0xdfefef, 1);
 
-var life = new LifeSimulation(10000, mat);
+var life = new LifeSimulation(20000, mat);
 // for(var y = 0; y < 2; y += 0.125) {
 // 	life.makeAnimal(new THREE.Vector3(20, y, 20), new THREE.Vector3());
 // }
@@ -42,9 +42,16 @@ view.camera.updateProjectionMatrix();
 // var first = true;
 var centerOfView = new THREE.Vector3();
 var tasks = [];
-tasks.push(makeBallTexture.bind(null, view.renderer, [light, hemisphereLight], function recieveTexture(tex) {
-	life.texture = tex;
-}));
+view.renderManager.onEnterFrame.add(function updateCubelet() {
+	makeCubeletTexture(
+		view.renderer,
+		[light, hemisphereLight],
+		view.camera.rotation,
+		function recieveTexture(tex) {
+			life.texture = tex;
+		}
+	);
+});
 
 //it costs more to sort for lower overdraw than it saves
 // setInterval(function() {
