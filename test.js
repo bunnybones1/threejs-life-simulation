@@ -77,10 +77,10 @@ function onEnterFrame() {
 	var delta2 = delta.clone();
 	delta2.x = Math.cos(angle) * distance;
 	delta2.z = Math.sin(angle) * distance;
-	view.camera.position.add(delta.sub(delta2));
+	// view.camera.position.add(delta.sub(delta2));
 	// if(first) {
-		centerOfView.lerp(life.centerOfMass, 0.15);
-		view.camera.lookAt(centerOfView);
+		// centerOfView.lerp(life.centerOfMass, 0.15);
+		// view.camera.lookAt(centerOfView);
 		// view.camera.rotation.x -= 0.3;
 		// view.camera.rotation.y += 0.3;
 		// first = false;
@@ -88,4 +88,44 @@ function onEnterFrame() {
 }
 view.renderManager.onEnterFrame.add(onEnterFrame);
 
+var RafTweener = require("raf-tweener");
+var Pointers = require('input-unified-pointers');
+var MouseWheel = require('input-mousewheel');
+var CameraController = require("threejs-camera-controller-pan-zoom-unified-pointer");
+
+var pointers = new Pointers(view.canvas);
+var mouseWheel = new MouseWheel(view.canvas);
+var rafTweener = new RafTweener();
+rafTweener.start();
+var camController = new CameraController({
+	camera: view.camera,
+	tweener: rafTweener,
+	pointers: pointers,
+	mouseWheel: mouseWheel,
+	panSpeed: 0.02,
+	fovMin: 35,
+	fovMax: 70
+});
+camController.setState(true);
+camController.setSize(window.innerWidth, window.innerHeight);
+
+var otherCamera = new THREE.PerspectiveCamera();
+otherCamera.updateProjectionMatrix();
+
+function setOtherCameraSize(w, h) {
+	otherCamera.setViewOffset(
+		w, 
+		h, 
+		w * 0.25, 
+		h * 0.25, 
+		w * 0.5, 
+		h * 0.5
+	);
+}
+setOtherCameraSize(window.innerWidth, window.innerHeight);
+view.onResizeSignal.add(setOtherCameraSize);
+
+view.renderManager.onEnterFrame.add(function(){
+	camController.precomposeViewport(otherCamera);
+});
 view.renderManager.skipFrames = urlparam('skipFrames', 0);

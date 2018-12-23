@@ -28,7 +28,11 @@ function LifeSimulation(maxAnimals, material) {
 		if(pos) {
 			animal.position.copy(pos);
 		} else {
-			animal.position.set(worldGrid.bounds.getSize().x * 0.5 + randPos(), randPos(), randPos()+4);
+			worldGrid.bounds.getSize(animal.position);
+			animal.position.x *= 0.5;
+			animal.position.x += randPos();
+			animal.position.y = randPos();
+			animal.position.z = randPos()+4;
 		}
 		this.totalMass += animal.mass;
 		
@@ -106,8 +110,10 @@ function LifeSimulation(maxAnimals, material) {
 	}
 
 	this.worldGrid = worldGrid;
-	var size = worldGrid.bounds.getSize();
-	var center = worldGrid.bounds.getCenter();
+	var size = new THREE.Vector3();
+	worldGrid.bounds.getSize(size);
+	var center = new THREE.Vector3();
+	worldGrid.bounds.getCenter(center);
 	var boundsHelper = new THREE.Mesh(
 		new THREE.BoxGeometry(size.x, size.y, size.z, 8, 8, 8),
 		new THREE.MeshBasicMaterial({
@@ -117,11 +123,14 @@ function LifeSimulation(maxAnimals, material) {
 	);
 	var pg = particles.geometry;
 	pg.boundingBox = worldGrid.bounds;
-	pg.boundingSphere = worldGrid.bounds.getBoundingSphere();
+	pg.boundingSphere = new THREE.Sphere();
+	worldGrid.bounds.getBoundingSphere(pg.boundingSphere);
 	pg.computeBoundingBox = null;
 	pg.computeBoundingSphere = null;
 	boundsHelper.position.add(size.clone().multiplyScalar(0.5));
 	this.add(boundsHelper);
+	
+	//TODO make particles correct size depending on camera fov
 
 
 	//let make some animals!
@@ -182,7 +191,6 @@ LifeSimulation.prototype.onEnterFrame = function () {
 		particles.setThings(i, animal.position, animal.color, animal.colorGlow);
 	}
 	particles.updateAttributes();
-
 }
 
 module.exports = LifeSimulation;
