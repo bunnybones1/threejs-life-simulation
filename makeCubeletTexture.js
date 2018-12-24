@@ -9,7 +9,7 @@ function makeCubeletTexture(renderer, lights = null, angle = 0, reciever) {
         var cornerRadius = halfSize * cornerRoundness;
         var nonRoundHalfSize = halfSize - cornerRadius;
         initd = true;
-        circleMap = new THREE.WebGLRenderTarget(64, 64, {
+        circleMap = new THREE.WebGLRenderTarget(128, 128, {
             format: THREE.RGBAFormat,
             type: THREE.UnsignedByteType
         });

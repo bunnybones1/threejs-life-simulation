@@ -6,6 +6,9 @@ var birthBoxSize = 1;
 var birthBoxSizeHalf = birthBoxSize * .5;
 var randPos = () => Math.random() * birthBoxSize - birthBoxSizeHalf;
 
+var wireframeColor = new THREE.Color(0xdfefef);
+wireframeColor.multiplyScalar(0.75);
+
 function LifeSimulation(maxAnimals, material) {
 	THREE.Object3D.call(this);
 	material = material ? material : new THREE.MeshBasicMaterial();
@@ -29,10 +32,10 @@ function LifeSimulation(maxAnimals, material) {
 			animal.position.copy(pos);
 		} else {
 			worldGrid.bounds.getSize(animal.position);
-			animal.position.x *= 0.5;
-			animal.position.x += randPos();
+			animal.position.z *= 0.5;
+			animal.position.z += randPos();
 			animal.position.y = randPos();
-			animal.position.z = randPos()+4;
+			animal.position.x = randPos()+4;
 		}
 		this.totalMass += animal.mass;
 		
@@ -40,7 +43,7 @@ function LifeSimulation(maxAnimals, material) {
 		animal.color = animal.material.color;
 		animal.colorGlow = animal.material.emissive;
 		// this.add(animal);
-		var velocity = vel || new THREE.Vector3(randPos()*4, randPos() + birthBoxSize * 6, randPos()+5);
+		var velocity = vel || new THREE.Vector3(randPos()+5, randPos() + birthBoxSize * 6, randPos()*4);
 		velocity.normalize();
 		velocity.multiplyScalar(0.5);
 		worldGrid.addActorPosition(animal.position, velocity, animal.material);
@@ -117,7 +120,7 @@ function LifeSimulation(maxAnimals, material) {
 	var boundsHelper = new THREE.Mesh(
 		new THREE.BoxGeometry(size.x, size.y, size.z, 8, 8, 8),
 		new THREE.MeshBasicMaterial({
-			color: 0xff0000,
+			color: wireframeColor,
 			wireframe: true
 		})
 	);
@@ -129,10 +132,14 @@ function LifeSimulation(maxAnimals, material) {
 	pg.computeBoundingSphere = null;
 	boundsHelper.position.add(size.clone().multiplyScalar(0.5));
 	this.add(boundsHelper);
+
+	var particlesSize = particles.material.size;
+	Object.defineProperty(this, "cameraFov", {
+		set: function(value) {
+			particles.material.size = particlesSize * (64 / value);
+		}
+	})
 	
-	//TODO make particles correct size depending on camera fov
-
-
 	//let make some animals!
 	// for (var i = this.maxAnimals - 1; i >= 0; i--) {
 	// 	//standard threejs animal stuff
@@ -191,6 +198,8 @@ LifeSimulation.prototype.onEnterFrame = function () {
 		particles.setThings(i, animal.position, animal.color, animal.colorGlow);
 	}
 	particles.updateAttributes();
+	
+	//TODO make particles correct size depending on camera fov
 }
 
 module.exports = LifeSimulation;

@@ -13,7 +13,7 @@
     "input-mousewheel": "^3.0.0",
     "input-unified-pointers": "^2.2.2",
     "raf-tweener": "^3.0.4",
-    "threejs-camera-controller-pan-zoom-unified-pointer": "^7.0.0"
+    "threejs-camera-controller-pan-zoom-unified-pointer": "^7.1.0"
   },
   "devDependencies": {
     "browserify": "^16.2.3",

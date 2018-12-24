@@ -28,7 +28,7 @@ var mat = new THREE.MeshPhongMaterial(matParams);
 
 view.renderer.setClearColor(debugOverdraw ? 0x000000 : 0xdfefef, 1);
 
-var life = new LifeSimulation(10000, mat);
+var life = new LifeSimulation(urlparam('particles', 1000), mat);
 
 // for(var y = 0; y < 2; y += 0.125) {
 // 	life.makeAnimal(new THREE.Vector3(20, y, 20), new THREE.Vector3());
@@ -36,9 +36,10 @@ var life = new LifeSimulation(10000, mat);
 view.scene.add(life);
 
 view.renderManager.onEnterFrame.add(() => life.onEnterFrame());
-view.camera.position.x += 15;
-view.camera.position.z += 5;
-view.camera.fov *= 0.75;
+view.camera.position.x += 13;
+view.camera.position.y += 2;
+view.camera.position.z += 15;
+view.camera.fov = 70;
 view.camera.updateProjectionMatrix();
 // var first = true;
 var centerOfView = new THREE.Vector3();
@@ -77,10 +78,11 @@ function onEnterFrame() {
 	var delta2 = delta.clone();
 	delta2.x = Math.cos(angle) * distance;
 	delta2.z = Math.sin(angle) * distance;
+	life.cameraFov = view.camera.fov * camController.panZoomRegion.zoomValue;
 	// view.camera.position.add(delta.sub(delta2));
 	// if(first) {
-		// centerOfView.lerp(life.centerOfMass, 0.15);
-		// view.camera.lookAt(centerOfView);
+		centerOfView.lerp(life.centerOfMass, 0.15);
+		view.camera.lookAt(centerOfView);
 		// view.camera.rotation.x -= 0.3;
 		// view.camera.rotation.y += 0.3;
 		// first = false;
@@ -103,8 +105,9 @@ var camController = new CameraController({
 	pointers: pointers,
 	mouseWheel: mouseWheel,
 	panSpeed: 0.02,
-	fovMin: 35,
-	fovMax: 70
+	fovMin: 50,
+	fovMax: 70,
+	zoomMax: 0.25
 });
 camController.setState(true);
 camController.setSize(window.innerWidth, window.innerHeight);
