@@ -107,7 +107,8 @@ var camController = new CameraController({
 	panSpeed: 0.02,
 	fovMin: 50,
 	fovMax: 70,
-	zoomMax: 0.25
+	zoomMax: 0.25,
+	singleFingerPanEnabled: false
 });
 camController.setState(true);
 camController.setSize(window.innerWidth, window.innerHeight);
@@ -125,6 +126,22 @@ function setOtherCameraSize(w, h) {
 		h * 0.5
 	);
 }
+
+var pos = new THREE.Vector3();
+var cameraVector = new THREE.Vector3();
+pointers.onPointerDragSignal.add(function onDragPointer(x, y, id) {
+	if(pointers.activePointerCount == 1) {
+		if(life.worldGrid.bounds.containsPoint(view.camera.position)) {
+			pos.copy(view.camera.position);
+			view.camera.updateMatrix();
+			view.camera.updateMatrixWorld();
+			cameraVector.set(x / view.canvas.clientWidth * 2 - 1, -(y / view.canvas.clientHeight * 2 - 1), 0.5 ).unproject( view.camera ).sub(pos).normalize();
+			life.worldGrid.boomFromRay(pos, cameraVector);
+		} else {
+			debugger;
+		}
+	}
+});
 setOtherCameraSize(window.innerWidth, window.innerHeight);
 view.onResizeSignal.add(setOtherCameraSize);
 

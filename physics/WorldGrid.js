@@ -7,11 +7,11 @@ var shininessGrass = 100;
 
 function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
     var boundsMax = new THREE.Vector3(
-        cols * 0.5 * unitScale,
-        layers * 0.5 * unitScale,
-        rows * 0.5 * unitScale
+        cols * unitScale,
+        layers * unitScale,
+        rows * unitScale
     );
-    var boundsMin = boundsMax.clone().multiplyScalar(-1);
+    var boundsMin = new THREE.Vector3();
     var bounds = new THREE.Box3(boundsMin, boundsMax);
     this.bounds = bounds;
     var totalCells = cols * layers * rows;
@@ -340,7 +340,7 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
     }
 
     var position = new THREE.Vector3();
-    this.boom = function boom(pos, radius) {
+    function boom(pos, radius) {
         var startIndex;
         do {
             startIndex = getIndexFromPos(pos);
@@ -370,6 +370,22 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
                     }
                 }
             }
+        }
+    }
+    this.boom = boom; 
+
+    this.boomFromRay = function boomFromRay(pos, normal) {
+        // var fastestAxis = Math.abs(normal.x) > Math.abs(normal.y) ? "x" : "y";
+        // fastestAxis = Math.abs(normal[fastestAxis]) > Math.abs(normal.z) ? fastestAxis : "z";
+        var hit = false;
+        normal.normalize().multiplyScalar(0.5);
+        while(!hit && bounds.containsPoint(pos)) {
+            var i = getIndexFromPos(pos);
+            hit = GetDensitySafe(i) > 0;
+            pos.add(normal);
+        }
+        if(hit) {
+            boom(pos, 1);
         }
     }
 }
