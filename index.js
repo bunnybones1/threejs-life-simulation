@@ -23,7 +23,7 @@ function LifeSimulation(maxAnimals, material) {
 	this.centerOfMass = new THREE.Vector3();
 	
 	var radius = 0.15;
-	var worldGrid = new WorldGrid(128, 128, 64, radius * 2 * 0.66);
+	var worldGrid = new WorldGrid(64, 64, 64, radius * 2 * 0.66);
 
 
 	function makeAnimal(pos, vel) {

@@ -232,6 +232,7 @@ function WorldGrid(cols=256, rows=256, layers=32, unitScale = 0.025) {
 
             var yNormal = GetDensitySafe(index-yOffset);
 
+            // vel.z += 0.002;
             if(yNormal == 0 && pos.y > 0.01) {
                 vel.y += gravity;
                 vel.x *= 0.98;

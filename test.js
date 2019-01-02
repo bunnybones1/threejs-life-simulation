@@ -108,7 +108,7 @@ var camController = new CameraController({
 	fovMin: 50,
 	fovMax: 70,
 	zoomMax: 0.25,
-	singleFingerPanEnabled: false
+	singleFingerPanEnabled: true
 });
 camController.setState(true);
 camController.setSize(window.innerWidth, window.innerHeight);
